@@ -49,9 +49,13 @@ public class RouteInfoManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    // Topic 消息队列路由信息
     private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
+    // Broker 节点信息，包括 brokername，所在集群名称，还有主备节点信息。
     private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
+    // Broker 集群信息，存储了集群中所有的 Brokername。
     private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
+    // Broker 状态信息，Nameserver 每次收到 Broker 的心跳包就会更新该信息。
     private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
     private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
 
