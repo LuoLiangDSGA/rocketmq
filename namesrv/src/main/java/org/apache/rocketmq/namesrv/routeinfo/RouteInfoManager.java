@@ -115,19 +115,22 @@ public class RouteInfoManager {
         RegisterBrokerResult result = new RegisterBrokerResult();
         try {
             try {
+                //加锁
                 this.lock.writeLock().lockInterruptibly();
-
+                //拿到broker
                 Set<String> brokerNames = this.clusterAddrTable.get(clusterName);
                 if (null == brokerNames) {
+                    //没有就新建
                     brokerNames = new HashSet<String>();
                     this.clusterAddrTable.put(clusterName, brokerNames);
                 }
-                brokerNames.add(brokerName);
+                brokerNames.add(brokerName);//因为是set，会自动去重，所以直接添加
 
-                boolean registerFirst = false;
+                boolean registerFirst = false;//是否首次注册
 
-                BrokerData brokerData = this.brokerAddrTable.get(brokerName);
+                BrokerData brokerData = this.brokerAddrTable.get(brokerName);//拿到broker详细信息，包含集群，broker，地址
                 if (null == brokerData) {
+                    //没拿到就新建broker信息，这时候还没有地址，可以从下面看到是个空的map
                     registerFirst = true;
                     brokerData = new BrokerData(clusterName, brokerName, new HashMap<Long, String>());
                     this.brokerAddrTable.put(brokerName, brokerData);
@@ -149,7 +152,7 @@ public class RouteInfoManager {
                 if (null != topicConfigWrapper
                     && MixAll.MASTER_ID == brokerId) {
                     if (this.isBrokerTopicConfigChanged(brokerAddr, topicConfigWrapper.getDataVersion())
-                        || registerFirst) {
+                        || registerFirst) { //首次注册或者topic变更，则更新topic信息
                         ConcurrentMap<String, TopicConfig> tcTable =
                             topicConfigWrapper.getTopicConfigTable();
                         if (tcTable != null) {
@@ -159,7 +162,7 @@ public class RouteInfoManager {
                         }
                     }
                 }
-
+                //更新存活的broker信息表
                 BrokerLiveInfo prevBrokerLiveInfo = this.brokerLiveTable.put(brokerAddr,
                     new BrokerLiveInfo(
                         System.currentTimeMillis(),
@@ -177,7 +180,7 @@ public class RouteInfoManager {
                         this.filterServerTable.put(brokerAddr, filterServerList);
                     }
                 }
-
+                //如果是slave节点注册，需要绑定maser节点
                 if (MixAll.MASTER_ID != brokerId) {
                     String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
                     if (masterAddr != null) {
@@ -389,6 +392,7 @@ public class RouteInfoManager {
         try {
             try {
                 this.lock.readLock().lockInterruptibly();
+                // 获取topic所有messageQueue信息
                 List<QueueData> queueDataList = this.topicQueueTable.get(topic);
                 if (queueDataList != null) {
                     topicRouteData.setQueueDatas(queueDataList);
@@ -422,7 +426,7 @@ public class RouteInfoManager {
         }
 
         log.debug("pickupTopicRouteData {} {}", topic, topicRouteData);
-
+        // 有broker信息并且有队列信息才返回
         if (foundBrokerData && foundQueueData) {
             return topicRouteData;
         }

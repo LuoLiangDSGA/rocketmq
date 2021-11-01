@@ -77,7 +77,8 @@ public class NamesrvController {
         // 加在kv配置
         this.kvConfigManager.load();
         // 初始化netty服务器
-        this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+        NettyRemotingServer remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+        this.remotingServer = remotingServer;
         // 初始化线程池
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
@@ -130,7 +131,7 @@ public class NamesrvController {
                             }
                         }
                         private void reloadServerSslContext() {
-                            ((NettyRemotingServer) remotingServer).loadSslContext();
+                            ((NettyRemotingServer) NamesrvController.this.remotingServer).loadSslContext();
                         }
                     });
             } catch (Exception e) {
